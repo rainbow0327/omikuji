@@ -1,0 +1,2 @@
+# omikuji
+おみくじのHTMLとJavaScriptを保存するリポジトリ
