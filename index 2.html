@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>まゆみのおみくじ</title>
+<meta name="description" content="ボタンを押してから結果が出る、まゆみのオリジナルおみくじ。">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pink-1:#ffe6f0;
+    --text-1:#3e2f2f;
+    --text-2:#5a403f;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    font-family:'Zen Maru Gothic', sans-serif;
+    background-color:var(--pink-1);
+    background-image:
+      radial-gradient(circle, white 20%, transparent 20%),
+      radial-gradient(circle, white 20%, transparent 20%);
+    background-size:40px 40px;
+    background-position:0 0, 20px 20px;
+    min-height:100vh;
+    color:var(--text-1);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  }
+  .card{
+    width:min(520px,100%);
+    background:#fff;
+    border-radius:24px;
+    box-shadow:0 10px 28px rgba(0,0,0,.08);
+    padding:72px 20px 18px;
+    border:1px solid #ffe2ee;
+    position:relative;
+    overflow:hidden;
+  }
+  .title{
+    font-size: clamp(20px, 6vw, 26px);
+    text-align:center;
+    margin:0 0 8px;
+    color:var(--text-2);
+    font-weight:700;
+    letter-spacing:.02em;
+  }
+  .result{
+    font-size: clamp(40px, 12vw, 64px);
+    text-align:center;
+    margin:16px 0 4px;
+    color:#ff6c9c;
+    font-weight:700;
+    opacity:1;
+  }
+  .advice{
+    font-size: clamp(16px, 4.3vw, 20px);
+    text-align:center;
+    color:var(--text-1);
+    min-height:72px;
+    margin:14px 8px 0;
+    line-height:1.8;
+    opacity:1;
+    white-space:normal;
+  }
+  .btn{
+    display:block;
+    width:100%;
+    margin:16px 0 0;
+    padding:14px 16px;
+    border:0;
+    border-radius:14px;
+    background:#ff8fb1;
+    color:#fff;
+    font-size:18px;
+    cursor:pointer;
+    font-family:'Zen Maru Gothic', sans-serif;
+  }
+  .btn:active{ transform:translateY(1px); }
+  .footer{
+    margin-top:10px;
+    font-size:12px;
+    color:var(--text-1);
+    text-align:center;
+  }
+  .brand{
+    position:absolute;
+    top:10px;
+    left:12px;
+    right:12px;
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .chip{
+    background:#ffe9f2;
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid #ffd6e7;
+    color:var(--text-1);
+    font-size:12px;
+  }
+  .hint{
+    font-size:14px;
+    text-align:center;
+    color:var(--text-1);
+    margin-top:8px;
+  }
+  @media (max-width: 360px){
+    .card{ padding-top:80px; }
+    .advice{ min-height:80px; }
+  }
+</style>
+</head>
+<body>
+  <div class="card" role="region" aria-label="まゆみのおみくじ">
+    <div class="brand">
+      <span class="chip">Mayumi Fortune</span><span class="chip">Original</span>
+    </div>
+    <div class="title">まゆみのおみくじ 🎀</div>
+    <div id="result" class="result" aria-live="polite">🩷結果🤍</div>
+    <div id="advice" class="advice">「ひく！」を押してね</div>
+    <button id="draw" class="btn" type="button" onclick="draw()">ひく！</button>
+    <div class="hint">あなたへのメッセージをお届けします🥰</div>
+    <div class="footer">© まゆみ</div>
+  </div>
+<script>
+  var fortunes = ["大吉","中吉","小吉","吉","末吉","凶"];
+  var advices_default = [
+    "今日のあなたは、まるでお日さまみたいに周りをあたためます☀️",
+    "小さなごほうびを、自分にあげる日です🎁",
+    "あなたの笑顔が、誰かの元気になります🌸",
+    "心の中に、やさしい風がふいています🍃",
+    "今日は「うれしい」をたくさん集めてみましょう💗",
+    "がんばりすぎず、ふんわり軽やかに過ごせますように🎀",
+    "新しい何かが、そっとあなたに近づいています✨",
+    "あなたのペースで、一歩ずつ大丈夫です🌈",
+    "だいじょうぶ。今のままでも十分すてきです🤍",
+    "好きな香りでひと呼吸。心がほどけます🌷",
+    "「ありがとう」を一言。幸せがふわっと広がります😊",
+    "光はいつもそばに。気づいた人からあたたかい🔆",
+    "小さなときめきを集めて、今日はごきげん日💞",
+    "やさしさはめぐって戻る。あなたからはじめよう🕊️",
+    "朝の空を見上げて、いい一日がはじまります🌤️"
+  ];
+
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  // 文章を可愛く2行に割る
+  function toTwoLines(s){
+    var seps = ["、","。","！","？","，","､"];
+    var points = [];
+    for(var i=0;i<seps.length;i++){
+      var idx = s.indexOf(seps[i]);
+      while(idx !== -1){
+        points.push(idx+1);
+        idx = s.indexOf(seps[i], idx+1);
+      }
+    }
+    if(points.length){
+      var mid = Math.floor(s.length/2);
+      var best = points[0], diff = Math.abs(points[0]-mid);
+      for(var j=1;j<points.length;j++){
+        var d = Math.abs(points[j]-mid);
+        if(d < diff){ best = points[j]; diff = d; }
+      }
+      return s.slice(0,best) + "<br>" + s.slice(best).trim();
+    }else{
+      var cut = Math.max(4, Math.floor(s.length*0.55));
+      return s.slice(0,cut) + "<br>" + s.slice(cut);
+    }
+  }
+
+  function draw(){
+    var resultEl = document.getElementById('result');
+    var adviceEl = document.getElementById('advice');
+    resultEl.textContent = pick(fortunes);
+    adviceEl.innerHTML = toTwoLines(pick(advices_default));
+  }
+</script>
+</body>
+</html>
